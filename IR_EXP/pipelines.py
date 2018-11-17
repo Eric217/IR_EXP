@@ -7,6 +7,7 @@ import pymysql
 
 class NewsPipeline(object):
 
+    # 插入语句
     sql_insert = '''insert into News(time, title, content) 
                       values('{time}', '{title}','{content}')'''
 
@@ -27,6 +28,7 @@ class NewsPipeline(object):
 
     # noinspection PyUnusedLocal
     def process_item(self, item, spider):
+        # 对于内容只有图片的新闻，我们暂不做处理，丢弃
         if len(item['title']) == 0:
             raise DropItem('----- Image News, Drop -----')
 
@@ -35,6 +37,7 @@ class NewsPipeline(object):
             title=pymysql.escape_string(item['title']),
             content=pymysql.escape_string(item['content'])
         )
+        # 插入数据库
         self.cursor.execute(sql_text)
         return item
 
