@@ -70,9 +70,10 @@ class IrExpDownloaderMiddleware(object):
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
-    def process_request(self, request, spider):
+    @staticmethod
+    def process_request(request, spider):
 
-        if spider.name == 'NewsSpider':
+        if spider.name == 'NewsSpider' and len(request.flags) == 0:
             try:
                 spider.browser.get(request.url)
 
@@ -80,19 +81,21 @@ class IrExpDownloaderMiddleware(object):
                 for i in range(0, 3):
                     spider.browser.execute_script(
                         'window.scrollTo(0, document.body.scrollHeight)')
-                    time.sleep(1)
+                    time.sleep(2)
 
-            except TimeoutException as e:
-                print('超时')
+            except TimeoutException:
+                print('----- 超时 -----')
                 spider.browser.execute_script('window.stop()')
 
+            spider.special_request = request
             return HtmlResponse(url=spider.browser.current_url,
                                 body=spider.browser.page_source,
                                 encoding="utf-8", request=request)
 
         return None
 
-    def process_response(self, request, response, spider):
+    @staticmethod
+    def process_response(request, response, spider):
         # Called with the response returned from the downloader.
 
         # Must either;

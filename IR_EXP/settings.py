@@ -69,7 +69,6 @@ DOWNLOADER_MIDDLEWARES = {
 #}
 ITEM_PIPELINES = {
     'IR_EXP.pipelines.NewsPipeline': 100
-    # 'IR_EXP.pipelines.ImgPipeline': 1,
 }
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html

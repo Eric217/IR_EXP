@@ -1,36 +1,47 @@
 # -*- coding: utf-8 -*-
-import json
 
-import scrapy
 from scrapy.exceptions import DropItem
-from scrapy.pipelines.images import ImagesPipeline
+
+import pymysql
 
 
 class NewsPipeline(object):
-    def __init__(self):
-        self.file = open('data.json', 'w', encoding='utf-8')
 
+    sql_insert = '''insert into News(time, title, content) 
+                      values('{time}', '{title}','{content}')'''
+
+    def __init__(self):
+
+        self.connect = pymysql.connect(
+            host='localhost',
+            port=3306,
+            db='ir_exp_db',
+            user='eric',
+            passwd='0202',
+            charset='utf8',
+            use_unicode=True
+        )
+
+        self.cursor = self.connect.cursor()
+        self.connect.autocommit(True)
+
+    # noinspection PyUnusedLocal
     def process_item(self, item, spider):
-        line = json.dumps(dict(item), ensure_ascii=False) + "\n"
-        self.file.write(line)
+        if len(item['title']) == 0:
+            raise DropItem('----- Image News, Drop -----')
+
+        sql_text = self.sql_insert.format(
+            time=pymysql.escape_string(item['time']),
+            title=pymysql.escape_string(item['title']),
+            content=pymysql.escape_string(item['content'])
+        )
+        self.cursor.execute(sql_text)
         return item
 
     def open_spider(self, spider):
         pass
 
+    # noinspection PyUnusedLocal
     def close_spider(self, spider):
-        pass
-
-
-# class ImgPipeline(ImagesPipeline):
-#     def get_media_requests(self, item, info):
-#         yield scrapy.Request('http:' + item['image_url'])
-#
-#     def item_completed(self, results, item, info):
-#
-#         if not results or not results[0] or not results[0][0]:
-#             raise DropItem("no image content")
-#
-#         item['image_path'] = results[0][1]['path']
-#         return item
-
+        self.cursor.close()
+        self.connect.close()
