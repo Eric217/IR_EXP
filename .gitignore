@@ -1,3 +1,8 @@
+# macOS
 .DS_Store
+
+# IDEA
 .idea/workspace.xml
-IR_EXP/spiders/__pycache__
+
+# Python Cache
+**/__pycache__/
