@@ -42,7 +42,7 @@ def get_input(stop_words):
     :param stop_words: 停用词列表
     :return: 字符串列表
     """
-    init_query = input('输入要查询的内容')
+    init_query = input('\n输入要查询的内容：')
     if not init_query:
         print('输入为空！')
         return []
@@ -148,6 +148,12 @@ class DataBase(object):
         return self.fetch_data(query)
 
     def get_sample_data(self, count):
+        """
+        与 get_news_data 唯一的区别是，这里取的数据是从第一条开始的（方便看着数据库测试）
+
+        :param count:
+        :return:
+        """
         query = "select * from News where id < " + pymysql.escape_string(str(580+count))
         return self.fetch_data(query)
 
