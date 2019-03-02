@@ -3,70 +3,53 @@ import math
 import codecs
 import unicodedata
 import jieba
-import synonyms as sy
 
 
-def get_tf_dict(data_list, stop_words, extract):
+jieba.enable_parallel(4)
+
+
+def get_fixed_query(origin_query, stop_list):
     """
-    用于生成 词-文档，字典记录了每个词出现在哪些文档里
-    :param data_list: [{'id': 1, }, {}, ]
-    :param stop_words: 停用词列表
-    :param extract: news 对象取的 key
-    :return: {word1: [doc1, doc1, doc2, doc3], }
+
+    :param stop_list: 停用词表
+    :param origin_query: 查询串
+    :return: 修正后的查询，格式：
     """
-    tf_dict = {}
 
-    curr_news_idx = 0
-    # id_binding = {}
-    for news in data_list:
-        for word in jieba.lcut(news.get(extract)):
-            if not word:
-                continue
-            w1 = word.strip()
-            if not word or not w1 or is_number(w1) or w1 in stop_words:
-                continue
-            elif word in tf_dict:
-                tf_dict[word].append(curr_news_idx)
-            else:
-                tf_dict[word] = [curr_news_idx]
-        # id_binding[curr_news_idx] = news.get('id')
-        curr_news_idx += 1
-
-    return tf_dict
-
-
-def get_input(stop_words):
-    """
-    获取用户输入，对用户查询分词、去停用词，返回处理后的查询词列表
-
-    :param stop_words: 停用词列表
-    :return: 字符串列表
-    """
-    init_query = input('\n输入要查询的内容：')
-    if not init_query:
-        print('输入为空！')
-        return []
+    if len(origin_query) == 0:
+        # print('输入为空')
+        return None
     query_words = []
-    for w in jieba.lcut(init_query):
-        if not w or w in stop_words:
+    for w in jieba.lcut(origin_query):
+        if not w or w in stop_list:
             continue
         else:
             query_words.append(w)
     if len(query_words) == 0:
-        print('输入内容没有明显意义')
-        return []
-    return query_words
+        # print('输入内容没有明显意义')
+        return None
+    query_words = list(set(query_words))
+    fixed_qry = get_fixed_keywords(query_words)
+
+    return fixed_qry
 
 
-def get_fixed_keywords(query_word_list, min_match):
+def get_fixed_keywords(query_word_list, min_match=1):
     """
     对查询词列表中的每一个词，找其近义词列表，最终返回总列表
-    :param query_word_list: 查询词字符串列表
-    :param min_match: 近义词程度，0-1，1 代表不找近义词
-    :return: [[str, str], []]
+
+    :param query_word_list: 查询词 列表
+    :param min_match: 近义词程度，0-1，1 代表不找近义词，取值取决于近义词库
+    :return: [[str, str], []] or None
     """
+    if len(query_word_list) == 0:
+        return None
     if min_match < 0.5:
         min_match = 0.5
+    if min_match < 1:
+        import synonyms as sy
+    # 可接受的最小近义词相似度，1 代表禁用近义词, 一般不用变
+    # min_synonyms = 0.77
     fixed = []
     for w in query_word_list:
         r = []
@@ -143,7 +126,9 @@ class DataBase(object):
         self.connect.autocommit(True)
 
     # count 为需要返回的数目，-1 表示全部
-    def get_news_data(self, count):
+    def get_news_data(self, count=-1):
+        if count == -1:
+            count = 1000000
         query = self.query_text + pymysql.escape_string(str(count))
         return self.fetch_data(query)
 
